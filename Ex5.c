@@ -123,8 +123,109 @@ DeckElem * deck_unlink_last(Deck *d){
     }
     DeckElem *temp = d->tail;
     d->tail = d->tail->prev;
-    d->tail->next = NULL;
+     if (d->tail != NULL) {  // If there is still a previous element
+        d->tail->next = NULL; // Set the next pointer of the new tail to NULL
+    } else { // If the list becomes empty
+        d->head = NULL; // Set the head to NULL as well
+    }
     return temp;
+}
+void deck_reverse(Deck *d) {
+    if (d == NULL || d->head == NULL) { // Check for NULL deck or empty deck
+        return;
+    }
+
+    DeckElem *element = d->head;
+    DeckElem *temp = NULL;
+    while (element != NULL) {
+        // Swap next and prev pointers
+        temp = element->next;
+        element->next = element->prev;
+        element->prev = temp;
+
+        // Move to the next element (which is now the prev pointer)
+        element = element->prev;
+    }
+
+    // Swap head and tail
+    temp = d->head;
+    d->head = d->tail;
+    d->tail = temp;
+}
+void deck_prepend(Deck *dst, Deck *src) {
+    if (src == NULL || src->head == NULL) {
+        return; // If src is empty, do nothing
+    }
+
+    // If dst is not empty, link the tail of src to the head of dst
+    if (dst->head != NULL) {
+        src->tail->next = dst->head;
+        dst->head->prev = src->tail;
+    } else {
+        // If dst is empty, just point the head and tail of dst to the head of src
+        dst->head = src->head;
+        dst->tail = src->tail;
+    }
+
+    // Update the head of dst to the head of src
+    dst->head = src->head;
+
+    // Set src's head and tail to NULL since it has been moved to dst
+    src->head = NULL;
+    src->tail = NULL;
+}
+Deck deck_build() {
+    Deck deck = { NULL, NULL }; // Initialize an empty deck
+    unsigned char suits[] = { 1, 2, 3, 4 }; // Spades, Clubs, Diamonds, Hearts
+    unsigned char ranks[] = { 9, 10, 11, 12, 13, 14 }; // 9, 10, J, Q, K, A
+
+    // Create a card for each combination of suit and rank
+    for (int s = 0; s < 4; ++s) {
+        for (int r = 0; r < 6; ++r) {
+            DeckElem *el = deck_create_elem(card_init(suits[s], ranks[r]));
+            if (deck.head == NULL) {
+                // If the deck is empty, set head and tail to the first element
+                deck.head = el;
+                deck.tail = el;
+            } else {
+                // Append the element to the tail of the deck
+                deck.tail->next = el;
+                el->prev = deck.tail;
+                deck.tail = el;
+            }
+        }
+    }
+
+    return deck;
+}
+void deck_deal(Deck *d, Deck hands[], unsigned n) {
+    if (d == NULL || n == 0) {
+        return; // Handle invalid input
+    }
+
+    unsigned hand_index = 0; // Start with the first hand
+    while (d->tail != NULL) {
+        // Unlink the last card from the deck
+        DeckElem *card = deck_unlink_last(d);
+
+        // Add the card to the current hand
+        if (hands[hand_index].head == NULL) {
+            // If the hand is empty, initialize it
+            hands[hand_index].head = card;
+            hands[hand_index].tail = card;
+            card->next = NULL;
+            card->prev = NULL;
+        } else {
+            // Append the card to the tail of the current hand
+            card->next = NULL;
+            card->prev = hands[hand_index].tail;
+            hands[hand_index].tail->next = card;
+            hands[hand_index].tail = card;
+        }
+
+        // Move to the next hand in a round-robin fashion
+        hand_index = (hand_index + 1) % n;
+    }
 }
 int main(void)
 {

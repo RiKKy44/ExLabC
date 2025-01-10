@@ -116,6 +116,16 @@ void deck_append_elem(Deck *d, DeckElem *el) {
         d->tail = el;
     }
 }
+
+DeckElem * deck_unlink_last(Deck *d){
+    if (d==NULL||d->tail == NULL){
+        return NULL;
+    }
+    DeckElem *temp = d->tail;
+    d->tail = d->tail->prev;
+    d->tail->next = NULL;
+    return temp;
+}
 int main(void)
 {
 	//For Part 1 remember to uncomment two additional lines between Parts 2 and 3
